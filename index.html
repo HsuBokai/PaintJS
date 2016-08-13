@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PaintJS</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+body{ 
+	margin:0px 0px 0px 0px;
+	//background-color: "black";
+	//color: #000000;
+	//font-size: 15px;
+}
+</style>
+</head>
+<body bgcolor="black"> 
+<canvas id="canvas" width="640" height="480" style="background-color:gray;">
+This text is displayed if your browser does not support HTML5 Canvas.
+</canvas>
+<script type='text/javascript' src="./ToolCircle.js"></script>
+<script type='text/javascript' src="./ToolLie.js"></script>
+<script type='text/javascript' src="./ToolText.js"></script>
+<script type='text/javascript' src="./ToolRect.js"></script>
+<script type='text/javascript' src="./Calender.js"></script>
+<script type='text/javascript'>
+(function(){
+
+var isMouseDown = false;
+var histories = [];
+var mode = "circle";
+var tool;
+
+var canvas = document.getElementById("canvas");
+var context = canvas.getContext("2d");
+context.strokeStyle = "red";
+context.font = "10pt Calibri";
+context.fillStyle = "red";
+context.lineWidth = 3;
+
+function recoverHistories()
+{
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    var len = histories.length;
+    for(var i=0; i<len; ++i) {
+        var history_tool = histories[i];
+        history_tool.draw(context);
+    }
+}
+
+function getPointInCanvas(canvas, evt)
+{
+    var rect = canvas.getBoundingClientRect();
+    var canvas_left = rect.left;
+    var canvas_top = rect.top;
+    var x = evt.clientX - canvas_left;
+    var y = evt.clientY - canvas_top;
+    //console.log([evt.clientX, evt.clientY]);
+    //console.log([canvas_left, canvas_top]);
+    //console.log([x, y]);
+    return [x, y];
+}
+
+canvas.onmousedown = function(evt)
+{
+    isMouseDown = true;
+    var point = getPointInCanvas(canvas, evt);
+    var x = point[0];
+    var y = point[1];
+    //console.log(mode);
+    switch(mode){
+        case "line":
+            tool = new ToolLine();
+            tool.setStartPoint(x, y);
+            break;
+        case "circle":
+            tool = new ToolCircle();
+            tool.setCenterPoint(x, y);
+            break;
+	case "rect":
+	    tool = new ToolRect();
+	    tool.setLeftTop(x,y);
+            break;
+        default: break;
+    }
+}
+
+canvas.onmousemove = function(evt)
+{
+    if (! isMouseDown) {
+        return;
+    }
+    recoverHistories();
+    var point = getPointInCanvas(canvas, evt);
+    var x = point[0];
+    var y = point[1];
+    switch(mode){
+        case "line":
+            tool.setEndPoint(x, y);
+            tool.draw(context);
+            break;
+        case "circle":
+            tool.setRadiusByEndPoint(x, y);
+            tool.draw(context);
+            break;
+	case "rect":
+	    tool.setRightButtom(x,y);
+            tool.draw(context);
+            break;
+        default: break;
+    }
+}
+
+canvas.onmouseup = function(evt)
+{
+    isMouseDown = false;
+    var point = getPointInCanvas(canvas, evt);
+    var x = point[0];
+    var y = point[1];
+    switch(mode){
+        case "line":
+        case "circle":
+	case "rect":
+            histories.push(tool);
+            break;
+        case "undo":
+            histories.pop();
+            recoverHistories();
+            break;
+        case "1":
+        case "2":
+        case "3":
+        case "4":
+        case "5":
+            tool = new ToolText(mode);
+            tool.setCenterPoint(x, y);
+            tool.draw(context);
+            histories.push(tool);
+            break;
+        default:
+            break;
+    }
+}
+
+})();</script>
+</body>
+</html>
